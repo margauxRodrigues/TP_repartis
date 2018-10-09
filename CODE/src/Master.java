@@ -8,7 +8,7 @@ public class Master {
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		ProcessBuilder pb = new ProcessBuilder("ls", "-al", "/home/margaux/Coucou");
+		ProcessBuilder pb = new ProcessBuilder("java", "-jar", "/home/margaux/Documents/Cours/Systemes_repartis_big_data/TP/slave.jar");
 		try {
 			Process p = pb.start();
 			InputStream is = p.getInputStream();
