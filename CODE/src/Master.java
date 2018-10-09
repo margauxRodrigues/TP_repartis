@@ -8,22 +8,38 @@ public class Master {
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		ProcessBuilder pb = new ProcessBuilder("ls", "-al", "/tmp");
+		ProcessBuilder pb = new ProcessBuilder("ls", "-al", "/home/margaux/Coucou");
 		try {
 			Process p = pb.start();
 			InputStream is = p.getInputStream();
+			InputStream es = p.getErrorStream();
+			// Read output
 			BufferedInputStream bis = new BufferedInputStream(is);
 			InputStreamReader isr = new InputStreamReader(bis);
 			BufferedReader br = new BufferedReader(isr);
-			String line;
-	        while ((line = br.readLine()) != null) { // while loop begins here
-	           System.out.println(line);
-	        } // end while 
-		} catch (IOException e) {
+			
+			// Read errors
+			BufferedInputStream bisError = new BufferedInputStream(es);
+			InputStreamReader isrError = new InputStreamReader(bisError);
+			BufferedReader brError = new BufferedReader(isrError);
+			String errorLine;
+			if ((errorLine = brError.readLine()) != null) {
+				System.out.println(errorLine);
+				while ((errorLine = brError.readLine()) != null) { // while loop begins here
+					System.out.println(errorLine);
+			        } // end while 
+				}
+			else {
+				String line;
+		        while ((line = br.readLine()) != null) { // while loop begins here
+		           System.out.println(line);
+		        } // end while 
+			}
+		}
+		catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 	}
 
 }
