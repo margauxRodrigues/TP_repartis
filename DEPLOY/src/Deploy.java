@@ -9,14 +9,27 @@ import java.util.ArrayList;
 
 public class Deploy {
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, InterruptedException {
 		// Tester la connection SSH avec les machines dont les noms sont enregistrés dans un fichier txt
 		String filename = "../machine_list.txt";
 		ArrayList<String>  machinesList = readTxt(filename);
 		ArrayList<Process> runningProcess = new ArrayList<Process>();
-		// Launch connection for all machines in list
+		
+		// Create /tmp/mrodrigues directory if doesn't exist on all machines
 		for (int i=0; i<machinesList.size(); i++) {
-			ProcessBuilder pb = new ProcessBuilder("ssh", "mrodrigues@" + machinesList.get(i), "hostname");
+			ProcessBuilder pb = new ProcessBuilder("ssh", "mrodrigues@" + machinesList.get(i), "mkdir", "-p", "/tmp/mrodrigues");
+			Process p = pb.start();
+			runningProcess.add(p);
+		}
+		for (int i=0; i<runningProcess.size(); i++) {
+			runningProcess.get(i).waitFor();
+		}
+		
+		// Copy jar file to all machines
+		for (int i=0; i<machinesList.size(); i++) {
+			ProcessBuilder pb = new ProcessBuilder("scp", 
+					"../slave.jar",
+					"mrodrigues@" + machinesList.get(i) + ":/tmp/mrodrigues/slave.jar");
 			Process p = pb.start();
 			runningProcess.add(p);
 		}
