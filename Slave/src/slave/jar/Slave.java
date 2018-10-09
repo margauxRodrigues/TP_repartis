@@ -6,6 +6,6 @@ public class Slave {
 		// TODO Auto-generated method stub
 		Thread.sleep(10000);	
 		int a = 3 + 5;
-		System.out.println(a);
+		System.err.println(a);
 	}
 }
