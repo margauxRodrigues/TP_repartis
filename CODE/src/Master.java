@@ -6,42 +6,42 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
+import java.util.HashMap;
 
 public class Master {
 
 	public static void main(String[] args) throws InterruptedException, IOException {
-		// Launch slave.jar on all machines
-		/*String machineName = "mrodrigues@C133-04";
-		ProcessBuilder pb = new ProcessBuilder("ssh",machineName,"java", "-jar", "/tmp/mrodrigues/slave.jar");
-		pb.inheritIO();
-		try {
-			Process p = pb.start();
-			// Timeout de deux secondes
-			boolean b = p.waitFor(15, TimeUnit.SECONDS);
-			if (!b) {
-				p.destroy();
-				System.out.println("Timeout ! ");
-			}
-			else {
-				readProcessOutput(p);
-			}
-		}
-		catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
-		
 		// Copy split files on all machines
-		String machinesFile = "../machine_list_test.txt";
+		String machinesFile = "/tmp/mrodrigues/machine_list.txt";
 		String outputDirectory = "/tmp/mrodrigues/splits";
-		String inputDirectory = "../";
+		String inputDirectory = "/tmp/mrodrigues/splits";
 		ArrayList <String> filesToCopy = new ArrayList<String>();
 		filesToCopy.add("S0.txt");
 		filesToCopy.add("S1.txt");
 		filesToCopy.add("S2.txt");
 		
 		copyFilesToMachines(inputDirectory, outputDirectory, filesToCopy, machinesFile);
+		
+		// Ici le directory splits est déjà fait et toutes les machines ont les Sx.
+		
+		// Lancer le slave sur les machines, un map par machine
+		ArrayList <Process> runningProcess = new ArrayList<Process>();
+		ArrayList <String> machinesList = readTxt(machinesFile);
+		HashMap <String, String> machineFileMap = new HashMap<String, String>();
+		// Ne fonctionne que si nbre de fichiers <= nombre de machines
+		for (int s=0; s<filesToCopy.size(); s++) {
+			// Slaves lancés
+			ProcessBuilder pb = new ProcessBuilder("ssh", "mrodrigues@" + machinesList.get(s), "java", "-jar", "/tmp/mrodrigues/slave.jar",
+					"0", "/tmp/mrodrigues/splits/" + filesToCopy.get(s));
+			Process p = pb.start();
+			runningProcess.add(p);
+		}
+		for (int p=0; p<runningProcess.size(); p++) {
+			// Attendre tous les process et récupérer le dictionnaire
+			runningProcess.get(p).waitFor();
+			machineFileMap.put("UM" + p + ".txt", machinesList.get(p));
+		}
+		printDict(machineFileMap);
 	}
 	
 	public static void readProcessOutput(Process p) throws IOException {
@@ -85,11 +85,11 @@ public class Master {
 			runningProcess.get(i).waitFor();
 		}
 		
-		// Copy jar file to all machines
+		// Copy files
 		for (int i=0; i<machinesList.size(); i++) {
 			for (int j=0; j<filename.size();j++) {
 				ProcessBuilder pb = new ProcessBuilder("scp", 
-						inputDir + filename.get(i),
+						inputDir + "/" + filename.get(j),
 						"mrodrigues@" + machinesList.get(i) + ":" + outputDir + "/" + filename.get(j));
 				Process p = pb.start();
 				runningProcess.add(p);
@@ -111,6 +111,12 @@ public class Master {
 		}
 		br.close();
 		return text;
+	}
+	
+	public static void printDict (HashMap dict) {
+		for (Object key : dict.keySet()) {
+			System.out.println(key + " : " + dict.get(key));
+		}
 	}
 
 }

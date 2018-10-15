@@ -11,7 +11,7 @@ public class Deploy {
 
 	public static void main(String[] args) throws IOException, InterruptedException {
 		// Tester la connection SSH avec les machines dont les noms sont enregistrés dans un fichier txt
-		String filename = "../machine_list.txt";
+		String filename = "/tmp/mrodrigues/machine_list.txt";
 		ArrayList<String>  machinesList = readTxt(filename);
 		ArrayList<Process> runningProcess = new ArrayList<Process>();
 		
@@ -28,7 +28,7 @@ public class Deploy {
 		// Copy jar file to all machines
 		for (int i=0; i<machinesList.size(); i++) {
 			ProcessBuilder pb = new ProcessBuilder("scp", 
-					"../slave.jar",
+					"/tmp/mrodrigues/slave.jar",
 					"mrodrigues@" + machinesList.get(i) + ":/tmp/mrodrigues/slave.jar");
 			Process p = pb.start();
 			runningProcess.add(p);
