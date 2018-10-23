@@ -55,12 +55,12 @@ public class Master {
 					keyMachinesDict.put(a[i], listMachines);
 				}
 			}
-				
 		}
 		
 		// a modifier pour qu'il affiche clé - liste de machines
 		printDict(machineFileMap);
 		printDict(keyMachinesDict);
+		System.out.println("Phase de map terminée");
 	}
 	
 	
