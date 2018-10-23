@@ -36,25 +36,43 @@ public class Master {
 			Process p = pb.start();
 			runningProcess.add(p);
 		}
+		HashMap< String, ArrayList<String>> keyMachinesDict = new HashMap< String, ArrayList<String> >();
 		for (int p=0; p<runningProcess.size(); p++) {
 			// Attendre tous les process et récupérer le dictionnaire
-			runningProcess.get(p).waitFor();
+			String[] a  = readProcessOutput(runningProcess.get(p)).split("\n"); // liste des clés
+			System.out.println(a[0]);
 			machineFileMap.put("UM" + p + ".txt", machinesList.get(p));
+			
+			for (int i=0; i<a.length; i++) {
+				if (keyMachinesDict.containsKey(a[i])) {
+					// update liste de machines
+					keyMachinesDict.get(a[i]).add(machinesList.get(p));
+				}
+				else {
+					// ajouter la clé et intialiser la liste de machines
+					ArrayList<String> listMachines = new ArrayList<String>();
+					listMachines.add(machinesList.get(p));
+					keyMachinesDict.put(a[i], listMachines);
+				}
+			}
+				
 		}
+		
+		// a modifier pour qu'il affiche clé - liste de machines
 		printDict(machineFileMap);
+		printDict(keyMachinesDict);
 	}
 	
 	
 	// ---------------- READ PROCESS OUTPUT -----------------------------------
 	public static String readProcessOutput(Process p) throws IOException {
-		String output = "";
 		InputStream is = p.getInputStream();
 		InputStream es = p.getErrorStream();
 		// Read output
 		BufferedInputStream bis = new BufferedInputStream(is);
 		InputStreamReader isr = new InputStreamReader(bis);
 		BufferedReader br = new BufferedReader(isr);
-		
+		String output;
 		// Read errors
 		BufferedInputStream bisError = new BufferedInputStream(es);
 		InputStreamReader isrError = new InputStreamReader(bisError);
@@ -62,14 +80,16 @@ public class Master {
 		String errorLine;
 		if ((errorLine = brError.readLine()) != null) {
 			System.out.println(errorLine);
+			output = errorLine;
 			while ((errorLine = brError.readLine()) != null) { // while loop begins here
-				output += errorLine;
+				output += errorLine+"\n";
 		        } // end while 
 			}
 		else {
 			String line;
+			output = "";
 	        while ((line = br.readLine()) != null) { // while loop begins here
-	           output += line;
+	           output += line+"\n";
 	        } // end while 
 		}	
 		return output;
