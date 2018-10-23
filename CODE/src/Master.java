@@ -12,7 +12,7 @@ public class Master {
 
 	public static void main(String[] args) throws InterruptedException, IOException {
 		// Copy split files on all machines
-		String machinesFile = "/tmp/mrodrigues/machine_list.txt";
+		String machinesFile = "../machine_list.txt";
 		String outputDirectory = "/tmp/mrodrigues/splits";
 		String inputDirectory = "/tmp/mrodrigues/splits";
 		ArrayList <String> filesToCopy = new ArrayList<String>();
@@ -44,7 +44,10 @@ public class Master {
 		printDict(machineFileMap);
 	}
 	
-	public static void readProcessOutput(Process p) throws IOException {
+	
+	// ---------------- READ PROCESS OUTPUT -----------------------------------
+	public static String readProcessOutput(Process p) throws IOException {
+		String output = "";
 		InputStream is = p.getInputStream();
 		InputStream es = p.getErrorStream();
 		// Read output
@@ -60,15 +63,16 @@ public class Master {
 		if ((errorLine = brError.readLine()) != null) {
 			System.out.println(errorLine);
 			while ((errorLine = brError.readLine()) != null) { // while loop begins here
-				System.out.println(errorLine);
+				output += errorLine;
 		        } // end while 
 			}
 		else {
 			String line;
 	        while ((line = br.readLine()) != null) { // while loop begins here
-	           System.out.println(line);
+	           output += line;
 	        } // end while 
 		}	
+		return output;
 	}
 
 	public static void copyFilesToMachines(String inputDir, String outputDir, ArrayList<String> filename, String machinesListDir) throws IOException, InterruptedException {
@@ -118,5 +122,6 @@ public class Master {
 			System.out.println(key + " : " + dict.get(key));
 		}
 	}
+
 
 }

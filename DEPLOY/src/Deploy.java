@@ -11,7 +11,7 @@ public class Deploy {
 
 	public static void main(String[] args) throws IOException, InterruptedException {
 		// Tester la connection SSH avec les machines dont les noms sont enregistrés dans un fichier txt
-		String filename = "/tmp/mrodrigues/machine_list.txt";
+		String filename = "../machine_list.txt";
 		ArrayList<String>  machinesList = readTxt(filename);
 		ArrayList<Process> runningProcess = new ArrayList<Process>();
 		
