@@ -6,12 +6,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 public class Deploy {
 
 	public static void main(String[] args) throws IOException, InterruptedException {
 		// Tester la connection SSH avec les machines dont les noms sont enregistrés dans un fichier txt
-		String filename = "../machine_list.txt";
+		String filename = "/home/margaux/Documents/Cours/Systemes_repartis_big_data/TP/machine_list.txt";
 		ArrayList<String>  machinesList = readTxt(filename);
 		ArrayList<Process> runningProcess = new ArrayList<Process>();
 		
@@ -28,7 +29,7 @@ public class Deploy {
 		// Copy jar file to all machines
 		for (int i=0; i<machinesList.size(); i++) {
 			ProcessBuilder pb = new ProcessBuilder("scp", 
-					"/tmp/mrodrigues/slave.jar",
+					"/home/margaux/Documents/Cours/Systemes_repartis_big_data/TP/slave.jar",
 					"mrodrigues@" + machinesList.get(i) + ":/tmp/mrodrigues/slave.jar");
 			Process p = pb.start();
 			runningProcess.add(p);
@@ -75,6 +76,28 @@ public class Deploy {
 	           System.out.println(line);
 	        } // end while 
 		}	
+	}
+	
+	public static ArrayList<String> testMachines(String file) throws IOException, InterruptedException{
+		ArrayList<String> allMachines = readTxt(file);
+		ArrayList<String> list = allMachines;
+		ArrayList<Integer> toRemove = new ArrayList<Integer>();
+		
+		for (int i=0; i<allMachines.size(); i++) {
+			ProcessBuilder pb = new ProcessBuilder("ssh",
+					"mrodrigues@" + allMachines.get(i) + "hostname");
+			Process p = pb.start();
+			boolean b = p.waitFor(5, TimeUnit.SECONDS);
+			if (!b) {
+				p.destroy();
+				toRemove.add(i);
+				System.out.println("Timeout, machine " + allMachines.get(i) + "deleted from list for this session");
+			}
+		}
+		for (int i=0; i<toRemove.size(); i++) {
+			list.remove(i);
+		}
+		return list;
 	}
 }
 

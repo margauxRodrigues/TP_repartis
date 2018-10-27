@@ -7,26 +7,28 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
 public class Master {
 
 	public static void main(String[] args) throws InterruptedException, IOException {
 		// Copy split files on all machines
-		String machinesFile = "../machine_list.txt";
+		String machinesFile = "/home/margaux/Documents/Cours/Systemes_repartis_big_data/TP/machine_list.txt";
 		String outputDirectory = "/tmp/mrodrigues/splits";
-		String inputDirectory = "/tmp/mrodrigues/splits";
+		String inputDirectory = "/home/margaux/Documents/Cours/Systemes_repartis_big_data/TP/Splits";
 		ArrayList <String> filesToCopy = new ArrayList<String>();
 		filesToCopy.add("S0.txt");
 		filesToCopy.add("S1.txt");
 		filesToCopy.add("S2.txt");
 		
 		copyFilesToMachines(inputDirectory, outputDirectory, filesToCopy, machinesFile);
-		
+		System.out.println("Copy OK");
 		// Ici le directory splits est déjà fait et toutes les machines ont les Sx.
 		
 		// Lancer le slave sur les machines, un map par machine
 		ArrayList <Process> runningProcess = new ArrayList<Process>();
 		ArrayList <String> machinesList = readTxt(machinesFile);
+		
 		HashMap <String, String> machineFileMap = new HashMap<String, String>();
 		// Ne fonctionne que si nbre de fichiers <= nombre de machines
 		for (int s=0; s<filesToCopy.size(); s++) {
@@ -36,6 +38,7 @@ public class Master {
 			Process p = pb.start();
 			runningProcess.add(p);
 		}
+		
 		HashMap< String, ArrayList<String>> keyMachinesDict = new HashMap< String, ArrayList<String> >();
 		for (int p=0; p<runningProcess.size(); p++) {
 			// Attendre tous les process et récupérer le dictionnaire
@@ -142,6 +145,27 @@ public class Master {
 			System.out.println(key + " : " + dict.get(key));
 		}
 	}
-
-
+	
+	// ---------- TESTER CONNEXION AUX MACHINES ------------
+	public static ArrayList<String> testMachines(String file) throws IOException, InterruptedException{
+		ArrayList <String> allMachines = readTxt(file);
+		ArrayList <String> list = allMachines;
+		ArrayList <Integer> toRemove = new ArrayList<Integer>();
+		
+		for (int i=0; i<allMachines.size(); i++) {
+			ProcessBuilder pb = new ProcessBuilder("ssh",
+					"mrodrigues@" + allMachines.get(i), "hostname");
+			Process p = pb.start();
+			boolean b = p.waitFor(5, TimeUnit.SECONDS);
+			if (!b) {
+				p.destroy();
+				toRemove.add(i);
+				System.out.println("Timeout, machine " + allMachines.get(i) + " deleted from list for this session");
+			}
+		}
+		for (int i = toRemove.size() - 1; i>=0; i--) {
+			list.remove(i);
+		}
+		return list;
+	}
 }
