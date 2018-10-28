@@ -13,29 +13,27 @@ public class Slave {
 
 	public static void main(String[] args) throws InterruptedException, IOException {
 		
-		// Create directory
-		ArrayList <Process> runningProcess = new ArrayList <Process>();
-		ProcessBuilder pb = new ProcessBuilder("mkdir", "-p", "/tmp/mrodrigues/maps");
-		Process p = pb.start();
-		runningProcess.add(p);
-		for (int i=0; i<runningProcess.size(); i++) {
-			runningProcess.get(i).waitFor();
-		}
-
-		if (args[0].equals("0"))
+		if (args[0].equals("0")) // Map
 		{
+			createDir("/tmp/mrodrigues/maps");
 			HashMap<String, Integer> um = map(args[1]);
 		
 			for (Object key : um.keySet()) {
 				System.out.println(key);
 			}
 		}
-		else if (args[0].equals("1"))
+		else if (args[0].equals("1")) // Shuffle
 		{
+			createDir("/tmp/mrodrigues/maps");
 			HashMap< String, Integer > sortedMaps = shuffle(args[1], args[2], Arrays.copyOfRange(args, 3, args.length));
-			System.out.println("Succes for suffle phase");
+			System.out.println("Succes for shuffle phase");
 		}
-		else {System.out.println("Echec");}
+		else if (args[0].equals("2")) // Reduce
+		{
+			createDir("/tmp/mrodrigues/reduces");
+			reduce(args[1], args[2], args[3]);
+		}
+		else {System.out.println("Echec,fonction non reconnue");}
 	}
 	
 	// ----------------------------- MAP FUNCTION ----------------------------------
@@ -73,7 +71,21 @@ public class Slave {
 		return sortedMap;
 	}
 	
-	// ----------------------------------- FONCTION ANNEXE -------------------------------------
+	// ---------------------------------- REDUCE ----------------------------------------------
+	public static void reduce(String keyword, String inputSortedMap, String output) throws IOException{
+		ArrayList<String> text = readTxt(inputSortedMap);
+		int count = 0;
+		for (int i = 0; i<text.size(); i++)
+		{
+			count += Integer.parseInt(text.get(i).split(" ")[1]);
+		}
+		File newTextFile = new File(output);
+        FileWriter fw = new FileWriter(newTextFile);
+        fw.write(keyword + " " + count);
+        fw.close();
+	}
+	
+	// ----------------------------------- FONCTION READ TXT -------------------------------------
 	public static ArrayList<String> readTxt (String filename) throws IOException {
 		ArrayList<String> text = new ArrayList<String>();
 		File f = new File(filename);
@@ -95,6 +107,17 @@ public class Slave {
 			result.put(split[0], Integer.parseInt((split[1])));
 		}
 		return result;
+	}
+	
+	// ------------------------------------ CREATE DIRECTORY ---------------------------------------
+	public static void createDir(String fullPathOfDirectoy) throws IOException, InterruptedException {
+		ArrayList <Process> runningProcess_dir = new ArrayList <Process>();
+		ProcessBuilder pb = new ProcessBuilder("mkdir", "-p", fullPathOfDirectoy);
+		Process p = pb.start();
+		runningProcess_dir.add(p);
+		for (int i=0; i<runningProcess_dir.size(); i++) {
+			runningProcess_dir.get(i).waitFor();
+		}
 	}
 	
 }

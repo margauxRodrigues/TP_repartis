@@ -38,36 +38,32 @@ public class Master {
 			runningProcess.add(p);
 		}
 		
-		HashMap< String, ArrayList<String>> keyMachinesDict = new HashMap< String, ArrayList<String> >();
+		HashMap< String, ArrayList<String>> keyWordUm = new HashMap< String, ArrayList<String> >();
 		for (int p=0; p<runningProcess.size(); p++) {
 			// Attendre tous les process et récupérer le dictionnaire
 			String[] a  = readProcessOutput(runningProcess.get(p)).split("\n"); // liste des clés
-			System.out.println(a[0]);
 			machineFileMap.put("UM" + p + ".txt", machinesList.get(p));
 			
 			for (int i=0; i<a.length; i++) {
-				if (keyMachinesDict.containsKey(a[i])) {
-					// update liste de machinesArrayList <Process> runningProcess = new ArrayList <Process>();
-					ProcessBuilder pb = new ProcessBuilder("mkdir", "-p", "/tmp/mrodrigues/maps");
-					Process proc = pb.start();
-					runningProcess.add(proc);
+				if (keyWordUm.containsKey(a[i])) {
+					// update liste de machines
 					for (int j=0; j<runningProcess.size(); j++) {
 						runningProcess.get(j).waitFor();
 					}
-					keyMachinesDict.get(a[i]).add(machinesList.get(p));
+					keyWordUm.get(a[i]).add("UM" + p + ".txt");
 				}
 				else {
 					// ajouter la clé et intialiser la liste de machines
 					ArrayList<String> listMachines = new ArrayList<String>();
-					listMachines.add(machinesList.get(p));
-					keyMachinesDict.put(a[i], listMachines);
+					listMachines.add("UM" + p + ".txt");
+					keyWordUm.put(a[i], listMachines);
 				}
 			}
 		}
 		
 		// a modifier pour qu'il affiche clé - liste de machines
 		printDict(machineFileMap);
-		printDict(keyMachinesDict);
+		printDict(keyWordUm);
 		System.out.println("Phase de map terminée");
 	}
 	
@@ -91,7 +87,7 @@ public class Master {
 			output = errorLine;
 			while ((errorLine = brError.readLine()) != null) { // while loop begins here
 				output += errorLine+"\n";
-		        } // end while 	
+		        } // end while 
 			}
 		else {
 			String line;
