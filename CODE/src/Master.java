@@ -22,9 +22,6 @@ public class Master {
 		filesToCopy.add("S1.txt");
 		filesToCopy.add("S2.txt");
 		
-		copyFilesToMachines(inputDirectory, outputDirectory, filesToCopy, machinesFile);
-		// Ici le directory splits est déjà fait et toutes les machines ont les Sx.
-		
 		// Lancer le slave sur les machines, un map par machine
 		ArrayList <Process> runningProcess = new ArrayList<Process>();
 		ArrayList <String> machinesList = readTxt(machinesFile);
@@ -33,7 +30,7 @@ public class Master {
 		// Ne fonctionne que si nbre de fichiers <= nombre de machines
 		for (int s=0; s<filesToCopy.size(); s++) {
 			// Slaves lancés
-			ProcessBuilder pbCopy = new ProcessBuilder("scp", inputDirectory + filesToCopy, "mrodrigues@" + machinesList.get(s) + ":/tmp/mrodrigues/splits/");
+			ProcessBuilder pbCopy = new ProcessBuilder("scp", inputDirectory + "/" + filesToCopy.get(s), "mrodrigues@" + machinesList.get(s) + ":/tmp/mrodrigues/splits/");
 			Process pCopy = pbCopy.start();
 			pCopy.waitFor();
 			ProcessBuilder pb = new ProcessBuilder("ssh", "mrodrigues@" + machinesList.get(s), "java", "-jar", "/tmp/mrodrigues/slave.jar",
@@ -119,7 +116,7 @@ public class Master {
 			arguments_reduce.add("/tmp/mrodrigues/reduces/RM" + (countKeys - 1) + ".txt");
 			ProcessBuilder pb_reduce = new ProcessBuilder(arguments_reduce);
 			Process p_reduce = pb_reduce.start();
-			System.out.println("RM" + countKeys + " " +  machineToCopy);
+			System.out.println("RM" + (countKeys - 1) + " " +  machineToCopy);
 		}
 		for (int p = 0; p<runningProcessShufflePrep.size(); p++)
 		{
