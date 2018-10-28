@@ -22,7 +22,6 @@ public class Master {
 		filesToCopy.add("S2.txt");
 		
 		copyFilesToMachines(inputDirectory, outputDirectory, filesToCopy, machinesFile);
-		System.out.println("Copy OK");
 		// Ici le directory splits est déjà fait et toutes les machines ont les Sx.
 		
 		// Lancer le slave sur les machines, un map par machine
@@ -48,7 +47,13 @@ public class Master {
 			
 			for (int i=0; i<a.length; i++) {
 				if (keyMachinesDict.containsKey(a[i])) {
-					// update liste de machines
+					// update liste de machinesArrayList <Process> runningProcess = new ArrayList <Process>();
+					ProcessBuilder pb = new ProcessBuilder("mkdir", "-p", "/tmp/mrodrigues/maps");
+					Process proc = pb.start();
+					runningProcess.add(proc);
+					for (int j=0; j<runningProcess.size(); j++) {
+						runningProcess.get(j).waitFor();
+					}
 					keyMachinesDict.get(a[i]).add(machinesList.get(p));
 				}
 				else {
@@ -86,7 +91,7 @@ public class Master {
 			output = errorLine;
 			while ((errorLine = brError.readLine()) != null) { // while loop begins here
 				output += errorLine+"\n";
-		        } // end while 
+		        } // end while 	
 			}
 		else {
 			String line;
@@ -140,6 +145,7 @@ public class Master {
 		return text;
 	}
 	
+	// --------------------------------- DISPLAY DICT CONTENT ------------------------------------------------------
 	public static void printDict (HashMap dict) {
 		for (Object key : dict.keySet()) {
 			System.out.println(key + " : " + dict.get(key));

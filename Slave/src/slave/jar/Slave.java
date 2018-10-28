@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 public class Slave {
@@ -29,6 +30,11 @@ public class Slave {
 				System.out.println(key);
 			}
 		}
+		else if (args[0].equals("1"))
+		{
+			HashMap< String, Integer > sortedMaps = shuffle(args[1], args[2], Arrays.copyOfRange(args, 3, args.length));
+			System.out.println("Succes for suffle phase");
+		}
 		else {System.out.println("Echec");}
 	}
 	
@@ -49,6 +55,25 @@ public class Slave {
 		return um;
 	}
 	
+	// ---------------------------------- SHUFFLE ----------------------------------------------
+	public static HashMap< String, Integer > shuffle(String keyWord, String outputFile, String[] UMlist) throws IOException{
+		HashMap<String, Integer> sortedMap = new HashMap< String, Integer >();
+		File newTextFile = new File(outputFile);
+        FileWriter fw = new FileWriter(newTextFile);
+		for (int i=0; i<UMlist.length; i++) {
+			ArrayList< String > fileContent = readTxt(UMlist[i]);
+			for (int j=0; j<fileContent.size(); j++) {
+				if (fileContent.get(j).split(" ")[0].equals(keyWord)){
+					sortedMap.put(keyWord, Integer.parseInt(fileContent.get(j).split(" ")[1]));
+					fw.write(keyWord + " " + sortedMap.get(keyWord).toString() + "\n");
+				}
+			}
+		}
+		fw.close();
+		return sortedMap;
+	}
+	
+	// ----------------------------------- FONCTION ANNEXE -------------------------------------
 	public static ArrayList<String> readTxt (String filename) throws IOException {
 		ArrayList<String> text = new ArrayList<String>();
 		File f = new File(filename);
@@ -60,4 +85,16 @@ public class Slave {
 		br.close();
 		return text;
 	}
+	
+	//------------------------------------- TXT FILE TO HASHMAP ------------------------------------
+	public static HashMap<String, Integer> convertTxtToHashMap(String filename) throws IOException {
+		HashMap< String, Integer > result = new HashMap< String, Integer >();
+		ArrayList< String > readFile = readTxt(filename);
+		for (int i =0; i<readFile.size(); i++) {
+			String[] split = readFile.get(i).split(" ");
+			result.put(split[0], Integer.parseInt((split[1])));
+		}
+		return result;
+	}
+	
 }
