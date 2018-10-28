@@ -60,13 +60,35 @@ public class Master {
 				}
 			}
 		}
-		
-		// a modifier pour qu'il affiche clé - liste de machines
 		printDict(machineFileMap);
 		printDict(keyWordUm);
 		System.out.println("Phase de map terminée");
+		
+		// --------------------------------- PREPARATION SHUFFLE -----------------
+		ArrayList <Process> runningProcessShufflePrep = new ArrayList<Process>();
+		for (String word : keyWordUm.keySet() )
+		{
+			String machineToCopy = machineFileMap.get(keyWordUm.get(word).get(0));
+			for (int j=1; j<keyWordUm.get(word).size(); j++)
+			{
+				// Get name of UM + location
+				String UMname = keyWordUm.get(word).get(j);
+				String location = machineFileMap.get(UMname);
+				// Copy UM files to first machine
+				ProcessBuilder pb = new ProcessBuilder("scp", 
+						"mrodrigues@" + location + ":/tmp/mrodrigues/maps/" + UMname,
+						"mrodrigues@" + machineToCopy + ":/tmp/mrodrigues/maps/");
+				
+				Process p = pb.start();
+				runningProcessShufflePrep.add(p);
+				System.out.println("Copy file " + UMname + " to " + machineToCopy + " for " + word);
+			}
+		}
+		for (int p = 0; p<runningProcessShufflePrep.size(); p++)
+		{
+			runningProcessShufflePrep.get(p).waitFor();
+		}
 	}
-	
 	
 	// ---------------- READ PROCESS OUTPUT -----------------------------------
 	public static String readProcessOutput(Process p) throws IOException {
