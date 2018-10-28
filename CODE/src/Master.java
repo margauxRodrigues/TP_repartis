@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class Master {
@@ -64,13 +65,26 @@ public class Master {
 		printDict(keyWordUm);
 		System.out.println("Phase de map terminée");
 		
-		// --------------------------------- PREPARATION SHUFFLE -----------------
+		// --------------------------------- PREPARATION SHUFFLE + SHUFFLE -----------------
+		
 		ArrayList <Process> runningProcessShufflePrep = new ArrayList<Process>();
+		int countKeys = 1;
 		for (String word : keyWordUm.keySet() )
 		{
 			String machineToCopy = machineFileMap.get(keyWordUm.get(word).get(0));
+			List<String> arguments = new ArrayList <String>();
+			arguments.add("ssh");
+			arguments.add("mrodrigues@" + machineToCopy);
+			arguments.add("java");
+			arguments.add("-jar");
+			arguments.add("/tmp/mrodrigues/slave.jar");
+			arguments.add("1");
+			arguments.add(word);
+			arguments.add("/tmp/mrodrigues/maps/SM" + countKeys + ".txt");
+			arguments.add("/tmp/mrodrigues/maps/" + keyWordUm.get(word).get(0));
 			for (int j=1; j<keyWordUm.get(word).size(); j++)
 			{
+
 				// Get name of UM + location
 				String UMname = keyWordUm.get(word).get(j);
 				String location = machineFileMap.get(UMname);
@@ -78,17 +92,42 @@ public class Master {
 				ProcessBuilder pb = new ProcessBuilder("scp", 
 						"mrodrigues@" + location + ":/tmp/mrodrigues/maps/" + UMname,
 						"mrodrigues@" + machineToCopy + ":/tmp/mrodrigues/maps/");
-				
 				Process p = pb.start();
-				runningProcessShufflePrep.add(p);
+				p.waitFor();
 				System.out.println("Copy file " + UMname + " to " + machineToCopy + " for " + word);
+				arguments.add("/tmp/mrodrigues/maps/" + keyWordUm.get(word).get(j));
 			}
+			System.out.println("process " + arguments);
+			ProcessBuilder pb = new ProcessBuilder(arguments);
+			Process p = pb.start();
+			runningProcessShufflePrep.add(p);
+			countKeys ++;
+			
+			// ------------- REDUCE ---------------------------------
+			List <String> arguments_reduce = new ArrayList<String>();
+			arguments_reduce.add("ssh");
+			arguments_reduce.add("mrodrigues@" + machineToCopy);
+			arguments_reduce.add("java");
+			arguments_reduce.add("-jar");
+			arguments_reduce.add("/tmp/mrodrigues/slave.jar");
+			arguments_reduce.add("2");
+			arguments_reduce.add(word);
+			arguments_reduce.add("/tmp/mrodrigues/maps/SM" + countKeys + ".txt");
+			arguments_reduce.add("/tmp/mrodrigues/reduces/RM" + (countKeys - 1) + ".txt");
+			ProcessBuilder pb_reduce = new ProcessBuilder(arguments_reduce);
+			Process p_reduce = pb_reduce.start();
+			System.out.println("RM" + countKeys + " " +  machineToCopy);
 		}
 		for (int p = 0; p<runningProcessShufflePrep.size(); p++)
 		{
 			runningProcessShufflePrep.get(p).waitFor();
+
 		}
 	}
+	
+
+	
+	
 	
 	// ---------------- READ PROCESS OUTPUT -----------------------------------
 	public static String readProcessOutput(Process p) throws IOException {
