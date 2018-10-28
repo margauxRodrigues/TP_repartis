@@ -33,6 +33,9 @@ public class Master {
 		// Ne fonctionne que si nbre de fichiers <= nombre de machines
 		for (int s=0; s<filesToCopy.size(); s++) {
 			// Slaves lancés
+			ProcessBuilder pbCopy = new ProcessBuilder("scp", inputDirectory + filesToCopy, "mrodrigues@" + machinesList.get(s) + ":/tmp/mrodrigues/splits/");
+			Process pCopy = pbCopy.start();
+			pCopy.waitFor();
 			ProcessBuilder pb = new ProcessBuilder("ssh", "mrodrigues@" + machinesList.get(s), "java", "-jar", "/tmp/mrodrigues/slave.jar",
 					"0", "/tmp/mrodrigues/splits/" + filesToCopy.get(s));
 			Process p = pb.start();
@@ -102,7 +105,7 @@ public class Master {
 			Process p = pb.start();
 			runningProcessShufflePrep.add(p);
 			countKeys ++;
-			
+			p.waitFor();
 			// ------------- REDUCE ---------------------------------
 			List <String> arguments_reduce = new ArrayList<String>();
 			arguments_reduce.add("ssh");
@@ -112,7 +115,7 @@ public class Master {
 			arguments_reduce.add("/tmp/mrodrigues/slave.jar");
 			arguments_reduce.add("2");
 			arguments_reduce.add(word);
-			arguments_reduce.add("/tmp/mrodrigues/maps/SM" + countKeys + ".txt");
+			arguments_reduce.add("/tmp/mrodrigues/maps/SM" + (countKeys - 1) + ".txt");
 			arguments_reduce.add("/tmp/mrodrigues/reduces/RM" + (countKeys - 1) + ".txt");
 			ProcessBuilder pb_reduce = new ProcessBuilder(arguments_reduce);
 			Process p_reduce = pb_reduce.start();
@@ -124,10 +127,6 @@ public class Master {
 
 		}
 	}
-	
-
-	
-	
 	
 	// ---------------- READ PROCESS OUTPUT -----------------------------------
 	public static String readProcessOutput(Process p) throws IOException {
