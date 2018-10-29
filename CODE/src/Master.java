@@ -18,25 +18,37 @@ public class Master {
 		String outputDirectory = "/tmp/mrodrigues/splits";
 		String inputDirectory = "/home/margaux/Documents/Cours/Systemes_repartis_big_data/TP/Splits";
 		ArrayList <String> filesToCopy = new ArrayList<String>();
-		filesToCopy.add("S0.txt");
-		filesToCopy.add("S1.txt");
-		filesToCopy.add("S2.txt");
-		
-		// Lancer le slave sur les machines, un map par machine
+		File directory = new File(inputDirectory);
+		File[] paths = directory.listFiles();
+		System.out.println("" + paths[0]);
+		for (int f=0; f<paths.length; f++) {
+			filesToCopy.add(paths[f].getName());
+		}
 		ArrayList <Process> runningProcess = new ArrayList<Process>();
-		ArrayList <String> machinesList = readTxt(machinesFile);
-		
+		ArrayList <String> machinesList = testMachines(machinesFile);
 		HashMap <String, String> machineFileMap = new HashMap<String, String>();
 		// Ne fonctionne que si nbre de fichiers <= nombre de machines
+		int machinesNumber = machinesList.size();
+		int machine_ind = 0;
 		for (int s=0; s<filesToCopy.size(); s++) {
 			// Slaves lancés
-			ProcessBuilder pbCopy = new ProcessBuilder("scp", inputDirectory + "/" + filesToCopy.get(s), "mrodrigues@" + machinesList.get(s) + ":/tmp/mrodrigues/splits/");
+			ProcessBuilder pb_dir = new ProcessBuilder("ssh", "mrodrigues@" + machinesList.get(machine_ind), "mkdir", "-p", outputDirectory);
+			Process p_dir = pb_dir.start();
+			p_dir.waitFor();
+			
+			ProcessBuilder pbCopy = new ProcessBuilder("scp", inputDirectory + "/" + filesToCopy.get(s), "mrodrigues@" + machinesList.get(machine_ind) + ":/tmp/mrodrigues/splits/");
 			Process pCopy = pbCopy.start();
 			pCopy.waitFor();
-			ProcessBuilder pb = new ProcessBuilder("ssh", "mrodrigues@" + machinesList.get(s), "java", "-jar", "/tmp/mrodrigues/slave.jar",
+			ProcessBuilder pb = new ProcessBuilder("ssh", "mrodrigues@" + machinesList.get(machine_ind), "java", "-jar", "/tmp/mrodrigues/slave.jar",
 					"0", "/tmp/mrodrigues/splits/" + filesToCopy.get(s));
 			Process p = pb.start();
 			runningProcess.add(p);
+			if (machine_ind == (machinesNumber - 1)) {
+				machine_ind = 0;
+			}
+			else {
+				machine_ind ++;
+			}
 		}
 		
 		HashMap< String, ArrayList<String>> keyWordUm = new HashMap< String, ArrayList<String> >();
@@ -84,7 +96,6 @@ public class Master {
 			arguments.add("/tmp/mrodrigues/maps/" + keyWordUm.get(word).get(0));
 			for (int j=1; j<keyWordUm.get(word).size(); j++)
 			{
-
 				// Get name of UM + location
 				String UMname = keyWordUm.get(word).get(j);
 				String location = machineFileMap.get(UMname);
@@ -97,7 +108,6 @@ public class Master {
 				System.out.println("Copy file " + UMname + " to " + machineToCopy + " for " + word);
 				arguments.add("/tmp/mrodrigues/maps/" + keyWordUm.get(word).get(j));
 			}
-			System.out.println("process " + arguments);
 			ProcessBuilder pb = new ProcessBuilder(arguments);
 			Process p = pb.start();
 			runningProcessShufflePrep.add(p);
@@ -121,11 +131,11 @@ public class Master {
 		for (int p = 0; p<runningProcessShufflePrep.size(); p++)
 		{
 			runningProcessShufflePrep.get(p).waitFor();
-
 		}
 	}
 	
-	// ---------------- READ PROCESS OUTPUT -----------------------------------
+	// ----------------------------------- FUNCTIONS ------------------------------------------
+	
 	public static String readProcessOutput(Process p) throws IOException {
 		InputStream is = p.getInputStream();
 		InputStream es = p.getErrorStream();
@@ -184,7 +194,6 @@ public class Master {
 			readProcessOutput(runningProcess.get(i));
 		}
 	}
-	// -----------------------------------
 	
 	public static ArrayList<String> readTxt (String filename) throws IOException {
 		ArrayList<String> text = new ArrayList<String>();
@@ -205,26 +214,46 @@ public class Master {
 		}
 	}
 	
-	// ---------- TESTER CONNEXION AUX MACHINES ------------
-	public static ArrayList<String> testMachines(String file) throws IOException, InterruptedException{
-		ArrayList <String> allMachines = readTxt(file);
-		ArrayList <String> list = allMachines;
-		ArrayList <Integer> toRemove = new ArrayList<Integer>();
-		
-		for (int i=0; i<allMachines.size(); i++) {
-			ProcessBuilder pb = new ProcessBuilder("ssh",
-					"mrodrigues@" + allMachines.get(i), "hostname");
+	// ------------------------------------ CREATE DIRECTORY ---------------------------------------
+	public static void createDir(String fullPathOfDirectoy) throws IOException, InterruptedException {
+		ArrayList <Process> runningProcess_dir = new ArrayList <Process>();
+		ProcessBuilder pb = new ProcessBuilder("mkdir", "-p", fullPathOfDirectoy);
+		Process p = pb.start();
+		runningProcess_dir.add(p);
+		for (int i=0; i<runningProcess_dir.size(); i++) {
+			runningProcess_dir.get(i).waitFor();
+		}
+	}
+	
+	// ------------------------------------ CREATE DIRECTORY ---------------------------------------
+	public static ArrayList<String> testMachines (String file) throws IOException, InterruptedException
+	{
+		ArrayList <String>  machinesList = readTxt(file);
+		ArrayList <String>  functional = new ArrayList<>(machinesList);
+		ArrayList <Process> runningssh = new ArrayList<Process>();
+		ArrayList <String>  toRemove = new ArrayList<String>();
+		boolean disfunct = true;
+		for (int i = 0; i<machinesList.size(); i++)
+		{
+			ProcessBuilder pb = new ProcessBuilder("ssh", "mrodrigues@" + machinesList.get(i), "hostname");
 			Process p = pb.start();
-			boolean b = p.waitFor(5, TimeUnit.SECONDS);
+			runningssh.add(p);
+		}
+		for (int i = 0; i<runningssh.size(); i++)
+		{
+			boolean b = runningssh.get(i).waitFor(3, TimeUnit.SECONDS);
 			if (!b) {
-				p.destroy();
-				toRemove.add(i);
-				System.out.println("Timeout, machine " + allMachines.get(i) + " deleted from list for this session");
+				disfunct = false;
+				runningssh.get(i).destroy();
+				toRemove.add(machinesList.get(i));
 			}
 		}
-		for (int i = toRemove.size() - 1; i>=0; i--) {
-			list.remove(i);
+		if (!disfunct) {
+			for (int i = (toRemove.size() - 1); i>=0; i--) {
+				functional.remove(toRemove.get(i));
+			}
 		}
-		return list;
+		return functional;
 	}
+	
 }

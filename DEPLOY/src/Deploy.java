@@ -13,7 +13,7 @@ public class Deploy {
 	public static void main(String[] args) throws IOException, InterruptedException {
 		// Tester la connection SSH avec les machines dont les noms sont enregistrés dans un fichier txt
 		String filename = "/home/margaux/Documents/Cours/Systemes_repartis_big_data/TP/machine_list.txt";
-		ArrayList<String>  machinesList = readTxt(filename);
+		ArrayList<String>  machinesList = testMachines(filename);
 		ArrayList<Process> runningProcess = new ArrayList<Process>();
 		
 		// Create /tmp/mrodrigues directory if doesn't exist on all machines
@@ -78,26 +78,35 @@ public class Deploy {
 		}	
 	}
 	
-	public static ArrayList<String> testMachines(String file) throws IOException, InterruptedException{
-		ArrayList<String> allMachines = readTxt(file);
-		ArrayList<String> list = allMachines;
-		ArrayList<Integer> toRemove = new ArrayList<Integer>();
-		
-		for (int i=0; i<allMachines.size(); i++) {
-			ProcessBuilder pb = new ProcessBuilder("ssh",
-					"mrodrigues@" + allMachines.get(i) + "hostname");
+	// ---------------------------------- TEST MACHINES ------------------------------------------
+	public static ArrayList<String> testMachines (String file) throws IOException, InterruptedException
+	{
+		ArrayList <String> machinesList = readTxt(file);
+		ArrayList <String> functional = new ArrayList<>(machinesList);
+		ArrayList <Process> runningssh = new ArrayList<Process>();
+		ArrayList <String> toRemove = new ArrayList<String>();
+		boolean disfunct = true;
+		for (int i = 0; i<machinesList.size(); i++)
+		{
+			ProcessBuilder pb = new ProcessBuilder("ssh", "mrodrigues@" + machinesList.get(i), "hostname");
 			Process p = pb.start();
-			boolean b = p.waitFor(5, TimeUnit.SECONDS);
+			runningssh.add(p);
+		}
+		for (int i = 0; i<runningssh.size(); i++)
+		{
+			boolean b = runningssh.get(i).waitFor(3, TimeUnit.SECONDS);
 			if (!b) {
-				p.destroy();
-				toRemove.add(i);
-				System.out.println("Timeout, machine " + allMachines.get(i) + "deleted from list for this session");
+				disfunct = false;
+				runningssh.get(i).destroy();
+				toRemove.add(machinesList.get(i));
 			}
 		}
-		for (int i=0; i<toRemove.size(); i++) {
-			list.remove(i);
+		if (!disfunct) {
+			for (int i = (toRemove.size() - 1); i>=0; i--) {
+				functional.remove(toRemove.get(i));
+			}
 		}
-		return list;
+		return functional;
 	}
 }
 
