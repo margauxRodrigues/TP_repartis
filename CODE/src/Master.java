@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 public class Master {
 
 	public static void main(String[] args) throws InterruptedException, IOException {
+		
 		// Copy split files on all machines
 		String machinesFile = "/home/margaux/Documents/Cours/Systemes_repartis_big_data/TP/machine_list.txt";
 		String outputDirectory = "/tmp/mrodrigues/splits";
@@ -20,35 +21,39 @@ public class Master {
 		ArrayList <String> filesToCopy = new ArrayList<String>();
 		File directory = new File(inputDirectory);
 		File[] paths = directory.listFiles();
-		System.out.println("" + paths[0]);
+
 		for (int f=0; f<paths.length; f++) {
 			filesToCopy.add(paths[f].getName());
 		}
+		
 		ArrayList <Process> runningProcess = new ArrayList<Process>();
-		ArrayList <String> machinesList = testMachines(machinesFile);
+		ArrayList <String> machinesListDispo = testMachines(machinesFile);
 		HashMap <String, String> machineFileMap = new HashMap<String, String>();
+		
+		// LISTE MACHINES ADAPTE SPLIT
+		ArrayList<String> machinesList = new ArrayList<String>(machinesListDispo);
+		if( machinesListDispo.size() < filesToCopy.size())
+		{
+			for (int i = machinesListDispo.size(); i<paths.length; i++)
+			{
+				machinesList.add(machinesListDispo.get(i - machinesListDispo.size()));
+			}
+		}
+		
 		// Ne fonctionne que si nbre de fichiers <= nombre de machines
-		int machinesNumber = machinesList.size();
-		int machine_ind = 0;
 		for (int s=0; s<filesToCopy.size(); s++) {
 			// Slaves lancés
-			ProcessBuilder pb_dir = new ProcessBuilder("ssh", "mrodrigues@" + machinesList.get(machine_ind), "mkdir", "-p", outputDirectory);
+			ProcessBuilder pb_dir = new ProcessBuilder("ssh", "mrodrigues@" + machinesList.get(s), "mkdir", "-p", outputDirectory);
 			Process p_dir = pb_dir.start();
 			p_dir.waitFor();
 			
-			ProcessBuilder pbCopy = new ProcessBuilder("scp", inputDirectory + "/" + filesToCopy.get(s), "mrodrigues@" + machinesList.get(machine_ind) + ":/tmp/mrodrigues/splits/");
+			ProcessBuilder pbCopy = new ProcessBuilder("scp", inputDirectory + "/" + filesToCopy.get(s), "mrodrigues@" + machinesList.get(s) + ":/tmp/mrodrigues/splits/");
 			Process pCopy = pbCopy.start();
 			pCopy.waitFor();
-			ProcessBuilder pb = new ProcessBuilder("ssh", "mrodrigues@" + machinesList.get(machine_ind), "java", "-jar", "/tmp/mrodrigues/slave.jar",
+			ProcessBuilder pb = new ProcessBuilder("ssh", "mrodrigues@" + machinesList.get(s), "java", "-jar", "/tmp/mrodrigues/slave.jar",
 					"0", "/tmp/mrodrigues/splits/" + filesToCopy.get(s));
 			Process p = pb.start();
 			runningProcess.add(p);
-			if (machine_ind == (machinesNumber - 1)) {
-				machine_ind = 0;
-			}
-			else {
-				machine_ind ++;
-			}
 		}
 		
 		HashMap< String, ArrayList<String>> keyWordUm = new HashMap< String, ArrayList<String> >();
@@ -134,7 +139,9 @@ public class Master {
 		}
 	}
 	
+	// ----------------------------------------------------------------------------------------
 	// ----------------------------------- FUNCTIONS ------------------------------------------
+	// ----------------------------------------------------------------------------------------
 	
 	public static String readProcessOutput(Process p) throws IOException {
 		InputStream is = p.getInputStream();
@@ -255,5 +262,7 @@ public class Master {
 		}
 		return functional;
 	}
+	
+	// ------------------------------------ SPLIT -------------------------------------------------------- 
 	
 }
