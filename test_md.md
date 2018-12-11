@@ -4,7 +4,7 @@ Vu dans la littérature (Adaptive multi-objective reinforcement learning with hy
 On se propose, pour limiter l'accélération, d'utiliser un reward inversement proportionnel à la norme des vecteurs accélération des véhicules à l'intersection ; pour limiter le temps d'attente une pénalité si le véhicule s'arrête à l'intersection.  
 Un reward pour un agent intersection peut être :
 
-''sum_i  - || text(acceleration)_i || + penalite_i ''  
+=== sum_i  - || text(acceleration)_i || + penalite_i ===  
 avec i l'indice des véhicules présents à l'intersection. Le tableau de pénalités est à discuter.
 
 Pour le contrôle de vitesse des véhicules, on propose de discrétiser les valeurs possibles. Par exemple : l'intersection envoie au véhicule qui entre dans la zone de capteurs une instruction vitesse :
